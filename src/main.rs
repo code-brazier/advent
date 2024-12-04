@@ -1,138 +1,132 @@
-use std::collections::HashMap;
-use log;
-use num_traits::sign::signum;
+fn parse_second_number(input: &str, position: usize, use_conditionals: bool, first_number_raw: &str, output: &mut String) -> i32 {
+    let mut i = 0;
+    loop {
+        if position + i >= input.len() {
+            break;
+        }
+        if &input[position + i..position + i + 1] == ")" {
+            if i == 0 {
+                break;
+            }
+            let first_number = first_number_raw.parse::<i32>().unwrap();
+            let second_number = input[position..position + i].parse::<i32>().unwrap();
+            output.push_str(format!("mul({},{})", first_number_raw, &input[position..position + i]).as_str());
+            return first_number * second_number + parse_mul(input, position + i + 1, use_conditionals, output);
+        }
+        if !input[position + i..position + i + 1].parse::<i32>().is_ok() {
+            break;
+        }
+        i += 1;
+    }
 
+    parse_mul(input, position + i + 1, use_conditionals, output)
+}
+
+fn parse_first_number(input: &str, position: usize, use_conditionals: bool, output: &mut String) -> i32 {
+    let mut i = 0;
+    loop {
+        if position + i >= input.len() {
+            break;
+        }
+        if &input[position + i..position + i + 1] == "," {
+            if i == 0 {
+                break;
+            }
+            return parse_second_number(input, position + i + 1, use_conditionals, &input[position..position + i], output);
+        }
+        if !input[position + i..position + i + 1].parse::<i32>().is_ok() {
+            break;
+        }
+        i += 1;
+    }
+
+    parse_mul(input, position + i + 1, use_conditionals, output)
+}
+
+// fn parse_do(input: &str, position: usize) -> i32 {
+//     let mut i = 0;
+//     loop {
+//         if position + i + 7 >= input.len() {
+//             return 0
+//         }
+//         if &input[position + i..position + i + 7] == "don't()" {
+//             return parse_mul(input, position + i + 7, true)
+//         }
+//         i += 1;
+//     }
+// }
+//
+// fn parse_mul(input: &str, position: usize, use_conditionals: bool) -> i32 {
+//     let mut i = 0;
+//     loop {
+//         if position + i + 7 >= input.len() {
+//             return 0;
+//         }
+//         if &input[position + i..position + i + 4] == "mul(" {
+//             return parse_first_number(input, position + i + 4, use_conditionals)
+//         }
+//         if use_conditionals && &input[position + i..position + i + 4] == "do()" {
+//             return parse_do(input, position + i + 4);
+//         }
+//         i += 1;
+//     }
+// }
+
+fn parse_do(input: &str, position: usize, output: &mut String) -> i32 {
+    let mut i = 0;
+    loop {
+        if position + i + 4 >= input.len() {
+            return 0
+        }
+        if &input[position + i..position + i + 4] == "do()" {
+            output.push_str("do()");
+            return parse_mul(input, position + i + 4, true, output)
+        }
+        i += 1;
+    }
+}
+
+fn parse_mul(input: &str, position: usize, use_conditionals: bool, output: &mut String) -> i32 {
+    let mut i = 0;
+    loop {
+        if position + i + 7 >= input.len() {
+            return 0;
+        }
+        if &input[position + i..position + i + 4] == "mul(" {
+            return parse_first_number(input, position + i + 4, use_conditionals, output)
+        }
+        if use_conditionals && &input[position + i..position + i + 7] == "don't()" {
+            output.push_str("don't()");
+            return parse_do(input, position + i + 7, output)
+        }
+        i += 1;
+    }
+}
 
 fn part1(input: &str) -> String {
 
-    let mut safe_count = 0;
+    let mut mul_count = 0;
 
-    // split the input by lines
-    for line in input.lines(){
+    mul_count += parse_mul(input, 0, false, &mut String::new());
 
-        let levels: Vec<i32> = line.split(' ').map(|level| level.parse::<i32>().unwrap()).collect();
-
-        let mut index = 0;
-        let mut offset = 0;
-
-        loop {
-            if levels[index] == levels[index + 1] + offset {
-                if offset == 0 {
-                    break;
-                }
-
-                index += 1;
-                offset = 0;
-                if levels.len() == index + 1 {
-                    safe_count += 1;
-                    break;
-                }
-            } else {
-                offset += 1;
-                if offset > 3 {
-                    break;
-                }
-            }
-        }
-
-        index = 0;
-        offset = 0;
-
-        loop {
-            if levels[index] == levels[index + 1] - offset {
-                if offset == 0 {
-                    break;
-                }
-
-                index += 1;
-                offset = 0;
-                if levels.len() == index + 1 {
-                    safe_count += 1;
-                    break;
-                }
-            } else {
-                offset += 1;
-                if offset > 3 {
-                    break;
-                }
-            }
-        }
-    }
-
-    format!("{}", safe_count)
+    format!("{}", mul_count)
 }
-
-fn pair_valid(a: i32, b: i32, direction: i32) -> bool {
-    let mut offset = 0;
-    loop {
-        if a + offset * direction == b {
-            if offset == 0 {
-                println!("Not valid: {} {} {}", a, b, direction);
-            } else {
-                println!("Valid: {} {} {}", a, b, direction);
-            }
-            return offset != 0
-        }
-        offset += 1;
-        if offset > 3 {
-            println!("Not valid: {} {} {}", a, b, direction);
-            return false
-        }
-    }
-}
-
-fn level_valid(levels: Vec<i32>, direction: i32) -> bool {
-    let mut index = 0;
-    let mut tolerated = false;
-
-    loop {
-        if index + 1 == levels.len() {
-            return true;
-        }
-        if pair_valid(levels[index], levels[index + 1], direction) {
-            index += 1;
-        } else {
-            if tolerated {
-                return false;
-            }
-            tolerated = true;
-
-            if index + 2 == levels.len() {
-                return true
-            }
-
-            let can_remove_first = (index == 0 || pair_valid(levels[index - 1], levels[index + 1], direction)) && pair_valid(levels[index + 1], levels[index + 2], direction);
-            let can_remove_second = pair_valid(levels[index], levels[index + 2], direction);
-            if !can_remove_first && !can_remove_second {
-                return false;
-            }
-
-            index += 2;
-        }
-    }
-}
-
 
 fn part2(input: &str) -> String {
 
-    let mut safe_count = 0;
+    let mut mul_count = 0;
+    let mut output = String::new();
 
-    // split the input by lines
-    for line in input.lines() {
+    mul_count += parse_mul(input, 0, true, &mut output);
 
-        let levels: Vec<i32> = line.split(' ').map(|level| level.parse::<i32>().unwrap()).collect();
+    // std::fs::write("out.txt", output).expect("Unable to write output file");
 
-        if level_valid(levels.clone(), 1) || level_valid(levels.clone(), -1) {
-            safe_count += 1;
-        }
-    }
-
-    format!("{}", safe_count)
+    format!("{}", mul_count)
 }
 
 fn main() {
     env_logger::init();
-    let input = std::fs::read_to_string("day2.txt").expect("Unable to read input file");
+    let input = std::fs::read_to_string("day3.txt").expect("Unable to read input file");
 
     println!("Part1: {}", part1(&input));
     println!("Part2: {}", part2(&input));
@@ -143,37 +137,20 @@ fn main() {
 mod tests {
     use crate::part1;
     use crate::part2;
+    use crate::parse_do;
 
     #[test]
     fn test_part1() {
-        let example1 = r#"7 6 4 2 1
-1 2 7 8 9
-9 7 6 2 1
-1 3 2 4 5
-8 6 4 4 1
-1 3 6 7 9"#;
-        let expected1 = "2".to_string();
+        let example1 = r#"xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))"#;
+        let expected1 = "161".to_string();
 
         assert_eq!(part1(example1), expected1);
     }
 
     #[test]
     fn test_part2() {
-        let example1 = r#"7 6 4 2 1
-1 2 7 8 9
-9 7 6 2 1
-1 3 2 4 5
-8 6 4 4 1
-1 3 6 7 9"#;
-        let expected1 = "4".to_string();
-
-        assert_eq!(part2(example1), expected1);
-    }
-
-    #[test]
-    fn test_part2_hard() {
-        let example1 = r#"7 6 6 3 1"#;
-        let expected1 = "1".to_string();
+        let example1 = r#"xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))"#;
+        let expected1 = "48".to_string();
 
         assert_eq!(part2(example1), expected1);
     }
