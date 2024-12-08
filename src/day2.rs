@@ -1,16 +1,21 @@
-use std::collections::HashMap;
-use log;
-use num_traits::sign::signum;
+// Importing this module might help with your IDE picking up the code?
+// If you don't have a module included via your main.rs file or lib.rs file, rust analyser won't analyse it :)
+mod day1;
 
+// You don't actually need any of these imports for this code...
+// use log;
+// use num_traits::sign::signum;
+// use std::collections::HashMap;
 
 fn part1(input: &str) -> String {
-
     let mut safe_count = 0;
 
     // split the input by lines
-    for line in input.lines(){
-
-        let levels: Vec<i32> = line.split(' ').map(|level| level.parse::<i32>().unwrap()).collect();
+    for line in input.lines() {
+        let levels: Vec<i32> = line
+            .split(' ')
+            .map(|level| level.parse::<i32>().unwrap())
+            .collect();
 
         let mut index = 0;
         let mut offset = 0;
@@ -71,12 +76,12 @@ fn pair_valid(a: i32, b: i32, direction: i32) -> bool {
             } else {
                 println!("Valid: {} {} {}", a, b, direction);
             }
-            return offset != 0
+            return offset != 0;
         }
         offset += 1;
         if offset > 3 {
             println!("Not valid: {} {} {}", a, b, direction);
-            return false
+            return false;
         }
     }
 }
@@ -98,10 +103,12 @@ fn level_valid(levels: Vec<i32>, direction: i32) -> bool {
             tolerated = true;
 
             if index + 2 == levels.len() {
-                return true
+                return true;
             }
 
-            let can_remove_first = (index == 0 || pair_valid(levels[index - 1], levels[index + 1], direction)) && pair_valid(levels[index + 1], levels[index + 2], direction);
+            let can_remove_first = (index == 0
+                || pair_valid(levels[index - 1], levels[index + 1], direction))
+                && pair_valid(levels[index + 1], levels[index + 2], direction);
             let can_remove_second = pair_valid(levels[index], levels[index + 2], direction);
             if !can_remove_first && !can_remove_second {
                 return false;
@@ -112,15 +119,15 @@ fn level_valid(levels: Vec<i32>, direction: i32) -> bool {
     }
 }
 
-
 fn part2(input: &str) -> String {
-
     let mut safe_count = 0;
 
     // split the input by lines
     for line in input.lines() {
-
-        let levels: Vec<i32> = line.split(' ').map(|level| level.parse::<i32>().unwrap()).collect();
+        let levels: Vec<i32> = line
+            .split(' ')
+            .map(|level| level.parse::<i32>().unwrap())
+            .collect();
 
         if level_valid(levels.clone(), 1) || level_valid(levels.clone(), -1) {
             safe_count += 1;
@@ -137,7 +144,6 @@ fn main() {
     println!("Part1: {}", part1(&input));
     println!("Part2: {}", part2(&input));
 }
-
 
 #[cfg(test)]
 mod tests {
