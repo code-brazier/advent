@@ -9,5 +9,5 @@ env_logger = "0.11.5"
 num-traits = "0.2.19"
 
 [[bin]]
-name = "day15"
-path = "src/day15.rs"
+name = "day16"
+path = "src/day16.rs"
